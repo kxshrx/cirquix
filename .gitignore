@@ -4,6 +4,8 @@ raw/
 *.jsonl
 *.jsonl.gz
 *.parquet
+*.db
+recommendation.db
 
 # System files
 .DS_Store
