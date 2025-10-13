@@ -86,17 +86,6 @@ def convert_to_csv():
         metadata_df.to_csv(output_path / 'metadata_filtered.csv', index=False)
         logger.info(f"Saved {len(metadata_df):,} products to metadata_filtered.csv")
     
-    # Create summary
-    with open(output_path / 'conversion_summary.txt', 'w') as f:
-        f.write("CSV Conversion Summary\n")
-        f.write("="*25 + "\n\n")
-        f.write("Files created:\n")
-        f.write("- train_cleaned.csv\n")
-        f.write("- valid_cleaned.csv\n") 
-        f.write("- test_cleaned.csv\n")
-        f.write("- metadata_filtered.csv\n\n")
-        f.write("Ready for machine learning models!\n")
-    
     logger.info("✓ CSV conversion completed successfully!")
 
 if __name__ == "__main__":
