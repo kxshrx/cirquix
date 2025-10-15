@@ -129,3 +129,88 @@ class DatabaseService:
             cursor = conn.cursor()
             cursor.execute(query, (user_id,))
             return cursor.fetchone() is not None
+    
+    def get_products_catalog(self, limit: int = 50, offset: int = 0, 
+                           search: Optional[str] = None, category: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get products catalog with pagination, search, and filtering"""
+        
+        base_query = """
+        SELECT parent_asin, title, main_category, price, average_rating, rating_number
+        FROM products
+        WHERE 1=1
+        """
+        
+        params = []
+        
+        # Add search filter
+        if search:
+            base_query += " AND (title LIKE ? OR main_category LIKE ?)"
+            search_param = f"%{search}%"
+            params.extend([search_param, search_param])
+        
+        # Add category filter
+        if category:
+            base_query += " AND main_category = ?"
+            params.append(category)
+        
+        # Add ordering and pagination
+        base_query += " ORDER BY rating_number DESC, average_rating DESC LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
+        
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(base_query, params)
+            results = cursor.fetchall()
+            
+            return [
+                {
+                    "product_id": row[0],
+                    "title": row[1],
+                    "category": row[2],
+                    "price": row[3],
+                    "rating": row[4],
+                    "rating_count": row[5],
+                    "image_url": None,
+                    "description": f"Quality {row[2]} product with {row[5] or 0} customer reviews"
+                }
+                for row in results
+            ]
+    
+    def get_products_count(self, search: Optional[str] = None, category: Optional[str] = None) -> int:
+        """Get total count of products matching filters"""
+        
+        base_query = "SELECT COUNT(*) FROM products WHERE 1=1"
+        params = []
+        
+        # Add search filter
+        if search:
+            base_query += " AND (title LIKE ? OR main_category LIKE ?)"
+            search_param = f"%{search}%"
+            params.extend([search_param, search_param])
+        
+        # Add category filter
+        if category:
+            base_query += " AND main_category = ?"
+            params.append(category)
+        
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(base_query, params)
+            return cursor.fetchone()[0]
+    
+    def get_categories(self) -> List[str]:
+        """Get all unique product categories"""
+        
+        query = """
+        SELECT DISTINCT main_category 
+        FROM products 
+        WHERE main_category IS NOT NULL AND main_category != ''
+        ORDER BY main_category
+        """
+        
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(query)
+            results = cursor.fetchall()
+            
+            return [row[0] for row in results if row[0]]

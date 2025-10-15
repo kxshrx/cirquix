@@ -4,7 +4,8 @@ const ProductCard = ({
   product, 
   explanation = null, 
   onClick = null, 
-  isRecommendation = false 
+  isRecommendation = false,
+  viewMode = 'grid' // 'grid' or 'list'
 }) => {
   const {
     product_id,
@@ -13,7 +14,8 @@ const ProductCard = ({
     price = 'N/A',
     rating = 0,
     image_url = null,
-    description = null
+    description = null,
+    confidence = null
   } = product;
 
   const handleClick = () => {
@@ -43,9 +45,101 @@ const ProductCard = ({
     return stars;
   };
 
+  const formatPrice = (price) => {
+    if (price === 'N/A' || price === null || price === undefined) {
+      return 'Price not available';
+    }
+    return `$${typeof price === 'string' ? price : price.toFixed(2)}`;
+  };
+
+  // List view layout
+  if (viewMode === 'list' && !isRecommendation) {
+    return (
+      <div 
+        className={`card p-4 ${onClick ? 'cursor-pointer hover:shadow-lg' : ''} transition-all`}
+        onClick={handleClick}
+      >
+        <div className="flex gap-4">
+          {/* Image */}
+          <div className="flex-shrink-0">
+            {image_url ? (
+              <img 
+                src={image_url} 
+                alt={title}
+                className="w-24 h-24 object-cover rounded"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+            ) : null}
+            <div 
+              className="w-24 h-24 bg-gray-100 border border-gray-200 rounded flex items-center justify-center" 
+              style={{ display: image_url ? 'none' : 'flex' }}
+            >
+              <Package size={20} className="text-gray-400" />
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-semibold text-gray-900 mb-1 truncate">
+              {title}
+            </h3>
+            
+            {description && (
+              <p className="text-gray-600 text-sm mb-2 line-clamp-2">
+                {description}
+              </p>
+            )}
+
+            <div className="flex flex-wrap items-center gap-4 mb-2">
+              <span className="category-badge">
+                <Tag size={14} />
+                {category}
+              </span>
+              
+              {rating > 0 && (
+                <div className="flex items-center gap-1">
+                  {renderStars(rating)}
+                  <span className="text-sm text-gray-600 ml-1">
+                    ({rating.toFixed(1)})
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="price-display">
+                {formatPrice(price)}
+              </span>
+              
+              {confidence && (
+                <span className="text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                  {(confidence * 100).toFixed(0)}% match
+                </span>
+              )}
+            </div>
+            
+            <div className="text-xs text-gray-500 mt-1">
+              ID: {product_id}
+            </div>
+          </div>
+        </div>
+
+        {explanation && (
+          <div className="recommendation-explanation mt-3">
+            <strong>Why recommended:</strong> {explanation}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Grid view layout (default)
   const cardClass = isRecommendation 
-    ? `card recommendation-card ${onClick ? 'cursor-pointer' : ''}` 
-    : 'card product-card';
+    ? `card recommendation-card card-hover-effect ${onClick ? 'cursor-pointer' : ''}` 
+    : `card product-card card-hover-effect ${onClick ? 'cursor-pointer' : ''}`;
 
   return (
     <div className={cardClass} onClick={handleClick}>
@@ -78,7 +172,7 @@ const ProductCard = ({
         </h3>
         
         {!isRecommendation && description && (
-          <p className="text-gray-600 mb-3 text-sm">{description}</p>
+          <p className="text-gray-600 mb-3 text-sm line-clamp-3">{description}</p>
         )}
 
         <div className="product-meta">
@@ -87,11 +181,9 @@ const ProductCard = ({
             {category}
           </span>
           
-          {price !== 'N/A' && (
-            <span className="font-semibold">
-              ${typeof price === 'string' ? price : price.toFixed(2)}
-            </span>
-          )}
+          <span className="price-display">
+            {formatPrice(price)}
+          </span>
           
           {rating > 0 && (
             <div className="rating">
@@ -100,6 +192,12 @@ const ProductCard = ({
                 ({rating.toFixed(1)})
               </span>
             </div>
+          )}
+
+          {confidence && (
+            <span className="text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded">
+              {(confidence * 100).toFixed(0)}% match
+            </span>
           )}
         </div>
 

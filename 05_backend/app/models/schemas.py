@@ -8,7 +8,9 @@ class Product(BaseModel):
     category: str
     price: Optional[str] = None
     rating: Optional[float] = None
+    rating_count: Optional[int] = None
     image_url: Optional[str] = None
+    description: Optional[str] = None
 
 
 class User(BaseModel):
