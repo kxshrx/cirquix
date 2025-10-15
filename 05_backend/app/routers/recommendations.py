@@ -20,10 +20,11 @@ def get_recommendation_service():
 async def get_user_recommendations(
     user_id: str,
     limit: int = 5,
+    use_llm: bool = True,
     db: DatabaseService = Depends(get_db_service),
     rec_service: RecommendationService = Depends(get_recommendation_service)
 ):
-    """Get personalized recommendations for a user"""
+    """Get personalized recommendations for a user with optional LLM explanations"""
     
     if not user_id or len(user_id.strip()) == 0:
         raise HTTPException(status_code=400, detail="User ID cannot be empty")
@@ -34,15 +35,28 @@ async def get_user_recommendations(
             detail="Limit must be between 1 and 20"
         )
     
-    # Check if user exists for known users, allow cold start
-    if user_id != "TEST_COLD_USER_123" and not db.user_exists(user_id):
+    # Get user history for LLM context
+    user_history = None
+    if use_llm and db.user_exists(user_id):
+        try:
+            user_history = db.get_user_history(user_id, limit=10)
+        except Exception as e:
+            print(f"Error fetching user history: {e}")
+    
+    # Check if user exists for known users, allow cold start for new users
+    if not db.user_exists(user_id):
         raise HTTPException(
             status_code=404,
             detail=f"User not found: {user_id}"
         )
     
     try:
-        recommendations = rec_service.get_recommendations(user_id, limit)
+        recommendations = rec_service.get_recommendations(
+            user_id, 
+            limit, 
+            use_llm=use_llm, 
+            user_history=user_history
+        )
         return RecommendationResponse(**recommendations)
     
     except Exception as e:

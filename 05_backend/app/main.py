@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import os
 
-from .routers import products, users, recommendations
+from .routers import products, users, recommendations, llm
 from .services.recommendations import RecommendationService
 
 # Global recommendation service instance
@@ -44,6 +44,7 @@ app.add_middleware(
 app.include_router(products.router)
 app.include_router(users.router)
 app.include_router(recommendations.router)
+app.include_router(llm.router)
 
 
 @app.get("/")
@@ -51,11 +52,14 @@ async def root():
     return {
         "message": "E-commerce Recommendation API",
         "version": "1.0.0",
+        "features": ["Product Info", "User History", "Recommendations", "LLM Explanations"],
         "endpoints": [
             "/products/{product_id}",
             "/products/{product_id}/related",
             "/users/{user_id}",
-            "/recommendations/{user_id}"
+            "/recommendations/{user_id}",
+            "/llm/explain",
+            "/llm/status"
         ]
     }
 

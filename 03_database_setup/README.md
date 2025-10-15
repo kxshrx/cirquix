@@ -5,7 +5,7 @@ This module creates a SQLite database for the recommendation system with optimiz
 ## Files
 
 1. `1_database_setup.py` - Create database schema and load full data  
-2. `2_query_helper.py` - Query functions and testing
+2. `2_query_helper.py` - Database query helper functions
 
 ## Usage
 
@@ -13,8 +13,8 @@ This module creates a SQLite database for the recommendation system with optimiz
 # Step 1: Setup database with full data
 python 1_database_setup.py
 
-# Step 2: Test queries
-python 2_query_helper.py
+# Step 2: Use query helper functions
+# Import QueryHelper class for database operations
 ```
 
 ## Database Schema

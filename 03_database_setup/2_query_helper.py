@@ -81,56 +81,5 @@ class QueryHelper:
             print(f"Error getting similar users: {e}")
             return []
 
-def test_queries():
-    """Test database queries with sample data."""
-    
-    helper = QueryHelper()
-    
-    print("Testing database queries")
-    print("=" * 25)
-    
-    try:
-        # Get sample user and product
-        with sqlite3.connect("recommendation.db") as conn:
-            cursor = conn.cursor()
-            
-            # Get random user
-            cursor.execute("SELECT user_id FROM users LIMIT 1")
-            sample_user = cursor.fetchone()[0]
-            
-            # Get random product
-            cursor.execute("SELECT parent_asin FROM products LIMIT 1")
-            sample_product = cursor.fetchone()[0]
-        
-        # Test user history
-        history = helper.get_user_history(sample_user)
-        print(f"\nUser {sample_user} history:")
-        print(f"Products purchased: {len(history)}")
-        
-        # Test product details
-        details = helper.get_product_details(sample_product)
-        print(f"\nProduct {sample_product}:")
-        print(f"Title: {details.get('title', 'N/A')}")
-        print(f"Category: {details.get('main_category', 'N/A')}")
-        print(f"Rating: {details.get('average_rating', 'N/A')}")
-        
-        # Test user interactions
-        interactions = helper.get_user_interactions(sample_user)
-        print(f"\nUser {sample_user} interactions:")
-        print(f"Total interactions: {len(interactions)}")
-        
-        # Test similar users
-        similar = helper.get_similar_users(sample_product, limit=5)
-        print(f"\nUsers who bought {sample_product}:")
-        print(f"Similar users found: {len(similar)}")
-        
-        print("\nAll queries executed successfully")
-        return True
-        
-    except Exception as e:
-        print(f"Query test failed: {e}")
-        return False
-
-if __name__ == "__main__":
-    success = test_queries()
-    sys.exit(0 if success else 1)
+# Query helper instance for importing
+query_helper = QueryHelper()

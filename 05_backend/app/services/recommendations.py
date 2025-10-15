@@ -7,9 +7,11 @@ from pathlib import Path
 
 try:
     from .hybrid_recommender import HybridRecommendationSystem
+    from .llm_integration import get_llm_explanation
 except ImportError:
-    print("Warning: Could not import HybridRecommendationSystem")
+    print("Warning: Could not import HybridRecommendationSystem or LLM integration")
     HybridRecommendationSystem = None
+    get_llm_explanation = None
 
 
 class RecommendationService:
@@ -36,9 +38,9 @@ class RecommendationService:
             print(f"Error loading recommendation models: {e}")
             self.recommender = None
     
-    def get_recommendations(self, user_id: str, num_recommendations: int = 5) -> Dict[str, Any]:
+    def get_recommendations(self, user_id: str, num_recommendations: int = 5, use_llm: bool = True, user_history: List[Dict] = None) -> Dict[str, Any]:
         if not self.recommender:
-            return self._get_fallback_recommendations(user_id, num_recommendations)
+            return self._get_fallback_recommendations(user_id, num_recommendations, use_llm, user_history)
         
         try:
             # Get recommendations from hybrid system
@@ -61,6 +63,17 @@ class RecommendationService:
                     "explanation": self._generate_explanation(rec)
                 })
             
+            # Generate LLM explanations if enabled and available
+            if use_llm and get_llm_explanation and formatted_recs:
+                try:
+                    llm_explanations = get_llm_explanation(user_id, formatted_recs, user_history)
+                    # Update recommendations with LLM explanations
+                    for rec, llm_exp in zip(formatted_recs, llm_explanations):
+                        if rec["product_id"] == llm_exp["product_id"]:
+                            rec["explanation"] = llm_exp["explanation"]
+                except Exception as e:
+                    print(f"LLM explanation failed, using fallback: {e}")
+            
             return {
                 "user_id": user_id,
                 "strategy": recommendations[0].get("strategy", "hybrid") if recommendations else "fallback",
@@ -69,9 +82,9 @@ class RecommendationService:
         
         except Exception as e:
             print(f"Error getting recommendations: {e}")
-            return self._get_fallback_recommendations(user_id, num_recommendations)
+            return self._get_fallback_recommendations(user_id, num_recommendations, use_llm, user_history)
     
-    def _get_fallback_recommendations(self, user_id: str, num_recommendations: int) -> Dict[str, Any]:
+    def _get_fallback_recommendations(self, user_id: str, num_recommendations: int, use_llm: bool = True, user_history: List[Dict] = None) -> Dict[str, Any]:
         # Simple fallback recommendations
         fallback_products = [
             {
@@ -94,10 +107,23 @@ class RecommendationService:
             }
         ]
         
+        selected_products = fallback_products[:num_recommendations]
+        
+        # Generate LLM explanations for fallback if enabled
+        if use_llm and get_llm_explanation and selected_products:
+            try:
+                llm_explanations = get_llm_explanation(user_id, selected_products, user_history)
+                # Update fallback with LLM explanations
+                for rec, llm_exp in zip(selected_products, llm_explanations):
+                    if rec["product_id"] == llm_exp["product_id"]:
+                        rec["explanation"] = llm_exp["explanation"]
+            except Exception as e:
+                print(f"LLM explanation failed for fallback: {e}")
+        
         return {
             "user_id": user_id,
             "strategy": "fallback",
-            "recommendations": fallback_products[:num_recommendations]
+            "recommendations": selected_products
         }
     
     def _generate_explanation(self, recommendation: Dict[str, Any]) -> str:
