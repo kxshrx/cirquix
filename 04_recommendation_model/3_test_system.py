@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 """
 Quick test script for hybrid recommendation system validation.
 Validates functionality for both existing users and cold start scenarios.
@@ -10,12 +10,12 @@ from pathlib import Path
 import sys
 import time
 
-# Import our recommendation system
+
 try:
     from hybrid_recommender import HybridRecommendationSystem
     print("✓ Hybrid recommender module imported successfully")
 except ImportError:
-    # Try importing directly from the file
+    
     import sys
     sys.path.append('.')
     exec(open('2_hybrid_recommender.py').read())
@@ -27,21 +27,21 @@ def test_system_initialization():
     
     system = HybridRecommendationSystem()
     
-    # Test model loading
+    
     if system.load_models():
         print("✓ Models loaded successfully")
     else:
         print("✗ Failed to load models")
         return None
     
-    # Test metadata loading
+    
     if system.load_product_metadata():
         print("✓ Product metadata loaded successfully")
         print(f"  Products available: {len(system.product_metadata):,}")
     else:
         print("✗ Failed to load product metadata")
     
-    # Test mappings
+    
     if system.user_mappings and system.item_mappings:
         print(f"✓ User mappings: {len(system.user_mappings['to_idx']):,} users")
         print(f"✓ Item mappings: {len(system.item_mappings['to_idx']):,} items")
@@ -56,7 +56,7 @@ def get_sample_users():
     try:
         train_df = pd.read_csv("train_filtered_04.csv")
         
-        # Get users with different interaction counts
+        
         user_counts = train_df['user_id'].value_counts()
         
         high_activity_user = user_counts[user_counts >= 20].index[0] if len(user_counts[user_counts >= 20]) > 0 else None
@@ -84,11 +84,11 @@ def test_user_recommendations(system, test_users):
         print(f"\n--- Testing {user_type.upper()} User: {user_id} ---")
         
         try:
-            # Get user history
+            
             history_items, history_ratings = system.get_user_history(user_id)
             print(f"User history: {len(history_items)} interactions")
             
-            # Get recommendations with timing
+            
             start_time = time.time()
             result = system.get_recommendations(user_id, top_k=5, include_metadata=True)
             inference_time = time.time() - start_time
@@ -97,7 +97,7 @@ def test_user_recommendations(system, test_users):
             print(f"Inference time: {inference_time:.4f}s")
             print(f"Recommendations returned: {len(result['recommendations'])}")
             
-            # Display recommendations with metadata
+            
             for i, rec in enumerate(result['recommendations'], 1):
                 product_id = rec['product_id']
                 confidence = rec['confidence']
@@ -113,7 +113,7 @@ def test_user_recommendations(system, test_users):
                 print(f"     Rating: {rating:.1f}")
                 print(f"     Confidence: {confidence:.3f}")
             
-            # Validation checks
+            
             if len(result['recommendations']) == 0:
                 print("  ⚠️  No recommendations returned")
             elif len(result['recommendations']) < 5:
@@ -129,7 +129,7 @@ def test_product_metadata_lookup(system):
     print("\n=== PRODUCT METADATA TEST ===")
     
     try:
-        # Get a few sample products
+        
         sample_products = list(system.item_mappings['to_idx'].keys())[:3]
         
         for product_id in sample_products:
@@ -152,7 +152,7 @@ def test_fallback_strategies(system):
     """Test different fallback strategies."""
     print("\n=== FALLBACK STRATEGY TESTS ===")
     
-    # Test popularity recommendations
+    
     try:
         pop_recs = system.get_popularity_recommendations(top_k=5)
         print(f"✓ Popularity recommendations: {len(pop_recs)} items")
@@ -162,7 +162,7 @@ def test_fallback_strategies(system):
     except Exception as e:
         print(f"✗ Error testing popularity recommendations: {e}")
     
-    # Test category recommendations
+    
     try:
         categories = system.product_metadata['main_category'].value_counts().head(3).index.tolist()
         
@@ -178,11 +178,11 @@ def test_database_connectivity():
     print("\n=== DATABASE CONNECTIVITY TEST ===")
     
     try:
-        # Test database connection
+        
         conn = sqlite3.connect("../03_database_setup/recommendation.db")
         cursor = conn.cursor()
         
-        # Check tables exist
+        
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
         tables = [row[0] for row in cursor.fetchall()]
         
@@ -205,7 +205,7 @@ def run_performance_benchmark(system, test_users):
     """Run performance benchmark tests."""
     print("\n=== PERFORMANCE BENCHMARK ===")
     
-    # Test multiple recommendation calls
+    
     test_calls = 10
     total_time = 0
     successful_calls = 0
@@ -243,19 +243,19 @@ def main():
     print("HYBRID RECOMMENDATION SYSTEM VALIDATION")
     print("=" * 45)
     
-    # Initialize system
+    
     system = test_system_initialization()
     if not system:
         print("✗ System initialization failed - aborting tests")
         return
     
-    # Get test users
+    
     test_users = get_sample_users()
     if not test_users:
         print("✗ Could not get test users - aborting tests")
         return
     
-    # Run all tests
+    
     test_user_recommendations(system, test_users)
     test_product_metadata_lookup(system)
     test_fallback_strategies(system)

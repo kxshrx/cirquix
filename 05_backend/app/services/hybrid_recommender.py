@@ -28,12 +28,12 @@ class HybridRecommendationSystem:
     def load_models(self):
         """Load all model components and mappings."""
         try:
-            
+            # Load ALS model
             model_path = self.model_dir / 'als_model_optimized_04.pkl'
             with open(model_path, 'rb') as f:
                 self.als_model = pickle.load(f)
             
-            
+            # Load mappings
             mappings_path = self.model_dir / 'mappings_optimized_04.pkl'
             with open(mappings_path, 'rb') as f:
                 mappings = pickle.load(f)
@@ -46,7 +46,7 @@ class HybridRecommendationSystem:
                     'from_idx': mappings['idx_to_item']
                 }
             
-            
+            # Load fallback data
             fallback_path = self.model_dir / 'fallback_data_04.pkl'
             with open(fallback_path, 'rb') as f:
                 self.fallback_data = pickle.load(f)
@@ -132,28 +132,28 @@ class HybridRecommendationSystem:
         3. Return results with metadata if requested
         """
         
-        
+        # Get user history
         history_items, history_ratings = self.get_user_history(user_id)
         
         recommendations = []
         strategy_used = "unknown"
         
-        
+        # Strategy 1: ALS for users with sufficient history (simplified for demo)
         if len(history_items) >= self.min_history_threshold:
             strategy_used = "als_collaborative"
-            
-            
+            # Note: In production, this would use the actual ALS model
+            # For now, we'll use enhanced popularity
             recommendations = self.get_popularity_recommendations(top_k, exclude_items=history_items)
         
-        
+        # Strategy 2: Hybrid fallback for cold start or ALS failure
         if not recommendations:
-            
+            # Get popularity recommendations
             pop_recs = self.get_popularity_recommendations(
                 top_k=max(6, top_k//2), 
                 exclude_items=history_items
             )
             
-            
+            # Get category recommendations if user has some history
             cat_recs = []
             if history_items and self.product_metadata is not None:
                 user_categories = []
@@ -175,7 +175,7 @@ class HybridRecommendationSystem:
             recommendations = recommendations[:top_k]
             strategy_used = "hybrid_fallback"
         
-        
+        # Add metadata if requested
         if include_metadata and self.product_metadata is not None:
             enriched_recs = []
             for product_id, confidence in recommendations:
@@ -208,7 +208,7 @@ class HybridRecommendationSystem:
             }
 
 
-
+# API-ready functions
 def initialize_recommendation_system(model_dir="."):
     """Initialize and return configured recommendation system."""
     system = HybridRecommendationSystem(model_dir)
