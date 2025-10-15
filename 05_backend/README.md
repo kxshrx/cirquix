@@ -19,10 +19,11 @@ pip install -r requirements.txt
 
 ## Environment Configuration
 
-Create `.env` file with your Groq API key:
+Copy the example environment file and add your Groq API key:
 
 ```bash
-GROQ_API_KEY=your_groq_api_key_here
+cp .env.example .env
+# Edit .env and add your actual Groq API key
 ```
 
 If no API key is provided, the system uses intelligent fallback explanations.
