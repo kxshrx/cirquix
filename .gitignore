@@ -7,10 +7,10 @@ raw/
 *.db
 recommendation.db
 
-# Environment files
+# Environment files (but allow .example files)
 .env
-*.env
-.env.*
+.env.local
+.env.production
 
 # System files
 .DS_Store
