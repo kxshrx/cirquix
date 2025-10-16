@@ -26,10 +26,10 @@ class DatabaseManager:
                 )
             """)
             
-            # Create products table
+            # Create products table with updated schema for dense dataset
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS products (
-                    parent_asin TEXT PRIMARY KEY,
+                    product_id TEXT PRIMARY KEY,
                     title TEXT,
                     main_category TEXT,
                     average_rating REAL,
@@ -40,31 +40,37 @@ class DatabaseManager:
                 )
             """)
             
-            # Create interactions table
+            # Create interactions table with updated schema for dense dataset
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS interactions (
                     user_id TEXT,
-                    parent_asin TEXT,
+                    product_id TEXT,
                     rating REAL,
                     timestamp TEXT
                 )
             """)
             
-            # Create indexes for fast lookups
+            # Create indexes for fast lookups (updated for dense dataset schema)
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_interactions_user ON interactions(user_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_interactions_product ON interactions(parent_asin)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_interactions_product ON interactions(product_id)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_products_category ON products(main_category)")
             
             conn.commit()
             print("Database schema created successfully")
     
     def load_interactions(self, train_path):
-        """Load full training interactions into database."""
+        """Load dense training interactions into database."""
         
-        print(f"Loading interactions from {train_path}")
+        print(f"Loading dense interactions from {train_path}")
         
-        # Load full training data
+        # Load dense training data (optimized dataset)
         df = pd.read_csv(train_path)
+        
+        # Print summary statistics for verification
+        print(f"Dense dataset loaded: {len(df):,} interactions")
+        print(f"Unique users: {df['user_id'].nunique():,}")
+        print(f"Unique products: {df['product_id'].nunique():,}")
+        print(f"Average interactions per user: {len(df) / df['user_id'].nunique():.1f}")
         
         with sqlite3.connect(self.db_path) as conn:
             # Load interactions table
@@ -72,36 +78,49 @@ class DatabaseManager:
             
             # Create users table from interactions
             user_stats = df.groupby('user_id').agg({
-                'parent_asin': lambda x: ' '.join(x.astype(str)),
+                'product_id': lambda x: ' '.join(x.astype(str)),
                 'user_id': 'count'
-            }).rename(columns={'parent_asin': 'purchase_history', 'user_id': 'total_purchases'})
+            }).rename(columns={'product_id': 'purchase_history', 'user_id': 'total_purchases'})
             
             user_stats.to_sql('users', conn, if_exists='replace', index_label='user_id')
             
             conn.commit()
-            print(f"Loaded {len(df):,} interactions and {len(user_stats):,} users")
+            print(f"Successfully loaded {len(df):,} interactions and {len(user_stats):,} users")
     
     def load_products(self, metadata_path):
-        """Load product metadata into database."""
+        """Load dense product metadata into database."""
         
-        print(f"Loading products from {metadata_path}")
+        print(f"Loading dense product metadata from {metadata_path}")
         
-        # Load metadata
+        # Load dense metadata (optimized dataset)
         df = pd.read_csv(metadata_path)
         
         # Handle missing values
         df = df.fillna('')
         
-        # Select required columns
-        product_cols = ['parent_asin', 'title', 'main_category', 'average_rating', 
-                       'rating_number', 'price', 'store', 'categories']
+        # Print summary statistics for verification
+        print(f"Dense metadata loaded: {len(df):,} products")
+        print(f"Products with prices: {(df['price'] != '').sum():,}")
+        print(f"Products with ratings: {(df['average_rating'] > 0).sum():,}")
         
-        df_products = df[product_cols].copy()
+        # Select required columns (updated for dense dataset schema)
+        product_cols = ['product_id', 'title', 'main_category', 'average_rating', 
+                       'rating_number', 'price']
+        
+        # Add optional columns if they exist
+        if 'store' in df.columns:
+            product_cols.append('store')
+        if 'categories' in df.columns:
+            product_cols.append('categories')
+        
+        # Filter to available columns
+        available_cols = [col for col in product_cols if col in df.columns]
+        df_products = df[available_cols].copy()
         
         with sqlite3.connect(self.db_path) as conn:
             df_products.to_sql('products', conn, if_exists='replace', index=False)
             conn.commit()
-            print(f"Loaded {len(df_products):,} products")
+            print(f"Successfully loaded {len(df_products):,} products")
     
     def verify_database(self):
         """Verify database integrity and show statistics."""
@@ -126,14 +145,14 @@ class DatabaseManager:
             return True
 
 def setup_database():
-    """Main function to setup complete database."""
+    """Main function to setup complete database using dense datasets."""
     
     # Initialize database manager
     db = DatabaseManager()
     
-    # Check required files
-    train_path = "../02_data_preprocessing/train_final.csv"
-    metadata_path = "../02_data_preprocessing/metadata_final.csv"
+    # Use dense datasets for optimized performance
+    train_path = "../02_data_preprocessing/train_dense.csv"
+    metadata_path = "../02_data_preprocessing/metadata_dense.csv"
     
     if not os.path.exists(train_path):
         print(f"Error: {train_path} not found.")
@@ -144,14 +163,15 @@ def setup_database():
         return False
     
     try:
-        # Setup database
-        print("Setting up recommendation database")
+        # Setup database with dense datasets for optimal performance
+        print("Setting up recommendation database with dense, optimized datasets")
         db.create_tables()
         db.load_interactions(train_path)
         db.load_products(metadata_path)
         db.verify_database()
         
-        print(f"\nDatabase setup complete: {db.db_path}")
+        print(f"\nDatabase setup complete with dense datasets: {db.db_path}")
+        print("Database now contains only high-activity users and popular products for optimal recommendations")
         return True
         
     except Exception as e:

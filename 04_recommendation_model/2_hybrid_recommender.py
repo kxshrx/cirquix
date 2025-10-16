@@ -1,6 +1,7 @@
 """
 Hybrid Recommendation System
 Production-ready recommendation engine combining ALS, popularity, and content-based approaches.
+Updated to work exclusively with dense, optimized datasets for improved performance.
 """
 
 import pandas as pd
@@ -58,11 +59,12 @@ class HybridRecommendationSystem:
             return False
     
     def load_product_metadata(self, db_path="../03_database_setup/recommendation.db"):
-        """Load product metadata from database."""
+        """Load product metadata from database (dense dataset)."""
         try:
             conn = sqlite3.connect(db_path)
-            query = "SELECT parent_asin, title, main_category, average_rating, price FROM products"
-            self.product_metadata = pd.read_sql_query(query, conn).set_index('parent_asin')
+            # Updated query for dense dataset schema
+            query = "SELECT product_id, title, main_category, average_rating, price FROM products"
+            self.product_metadata = pd.read_sql_query(query, conn).set_index('product_id')
             conn.close()
             return True
         except Exception as e:
@@ -70,13 +72,14 @@ class HybridRecommendationSystem:
             return False
 
     def get_user_history(self, user_id, db_path="../03_database_setup/recommendation.db"):
-        """Get user purchase history from database."""
+        """Get user purchase history from database (dense dataset)."""
         try:
             conn = sqlite3.connect(db_path)
-            query = "SELECT parent_asin, rating FROM interactions WHERE user_id = ? ORDER BY timestamp DESC"
+            # Updated query for dense dataset schema
+            query = "SELECT product_id, rating FROM interactions WHERE user_id = ? ORDER BY timestamp DESC"
             history = pd.read_sql_query(query, conn, params=[user_id])
             conn.close()
-            return history['parent_asin'].tolist(), history['rating'].tolist()
+            return history['product_id'].tolist(), history['rating'].tolist()
         except:
             return [], []
 

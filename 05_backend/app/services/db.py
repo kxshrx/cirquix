@@ -17,10 +17,11 @@ class DatabaseService:
         return sqlite3.connect(self.db_path)
     
     def get_product(self, product_id: str) -> Optional[Dict[str, Any]]:
+        # Updated query for dense dataset schema
         query = """
-        SELECT parent_asin, title, main_category, price, average_rating 
+        SELECT product_id, title, main_category, price, average_rating 
         FROM products 
-        WHERE parent_asin = ?
+        WHERE product_id = ?
         """
         with self.get_connection() as conn:
             cursor = conn.cursor()
@@ -58,10 +59,11 @@ class DatabaseService:
             return None
     
     def get_user_history(self, user_id: str, limit: int = 20) -> List[Dict[str, Any]]:
+        # Updated query for dense dataset schema
         query = """
-        SELECT i.parent_asin, p.title, i.rating, i.timestamp
+        SELECT i.product_id, p.title, i.rating, i.timestamp
         FROM interactions i
-        JOIN products p ON i.parent_asin = p.parent_asin
+        JOIN products p ON i.product_id = p.product_id
         WHERE i.user_id = ?
         ORDER BY i.timestamp DESC
         LIMIT ?
@@ -82,22 +84,23 @@ class DatabaseService:
             ]
     
     def get_related_products(self, product_id: str, limit: int = 5) -> List[Dict[str, Any]]:
+        # Updated query for dense dataset schema
         query = """
         WITH product_users AS (
-            SELECT user_id FROM interactions WHERE parent_asin = ?
+            SELECT user_id FROM interactions WHERE product_id = ?
         ),
         related_products AS (
-            SELECT i.parent_asin, COUNT(*) as co_occurrence
+            SELECT i.product_id, COUNT(*) as co_occurrence
             FROM interactions i
             JOIN product_users pu ON i.user_id = pu.user_id
-            WHERE i.parent_asin != ?
-            GROUP BY i.parent_asin
+            WHERE i.product_id != ?
+            GROUP BY i.product_id
             ORDER BY co_occurrence DESC
             LIMIT ?
         )
-        SELECT rp.parent_asin, p.title, p.main_category, p.price, p.average_rating
+        SELECT rp.product_id, p.title, p.main_category, p.price, p.average_rating
         FROM related_products rp
-        JOIN products p ON rp.parent_asin = p.parent_asin
+        JOIN products p ON rp.product_id = p.product_id
         """
         with self.get_connection() as conn:
             cursor = conn.cursor()
@@ -117,7 +120,8 @@ class DatabaseService:
             ]
     
     def product_exists(self, product_id: str) -> bool:
-        query = "SELECT 1 FROM products WHERE parent_asin = ? LIMIT 1"
+        # Updated query for dense dataset schema
+        query = "SELECT 1 FROM products WHERE product_id = ? LIMIT 1"
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(query, (product_id,))
@@ -132,10 +136,11 @@ class DatabaseService:
     
     def get_products_catalog(self, limit: int = 50, offset: int = 0, 
                            search: Optional[str] = None, category: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Get products catalog with pagination, search, and filtering"""
+        """Get products catalog with pagination, search, and filtering (dense dataset)"""
         
+        # Updated query for dense dataset schema
         base_query = """
-        SELECT parent_asin, title, main_category, price, average_rating, rating_number
+        SELECT product_id, title, main_category, price, average_rating, rating_number
         FROM products
         WHERE 1=1
         """

@@ -4,7 +4,7 @@ import sqlite3
 import sys
 
 class QueryHelper:
-    """Helper functions for querying recommendation database."""
+    """Helper functions for querying recommendation database (dense dataset optimized)."""
     
     def __init__(self, db_path="recommendation.db"):
         self.db_path = db_path
@@ -26,15 +26,16 @@ class QueryHelper:
             print(f"Error getting user history: {e}")
             return []
     
-    def get_product_details(self, parent_asin):
-        """Return product information as dictionary."""
+    def get_product_details(self, product_id):
+        """Return product information as dictionary (dense dataset)."""
         
         try:
             with sqlite3.connect(self.db_path) as conn:
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
                 
-                cursor.execute("SELECT * FROM products WHERE parent_asin = ?", (parent_asin,))
+                # Updated query for dense dataset schema
+                cursor.execute("SELECT * FROM products WHERE product_id = ?", (product_id,))
                 result = cursor.fetchone()
                 
                 if result:
@@ -46,13 +47,14 @@ class QueryHelper:
             return {}
     
     def get_user_interactions(self, user_id):
-        """Return all interactions for a user."""
+        """Return all interactions for a user (dense dataset)."""
         
         try:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
+                # Updated query for dense dataset schema
                 cursor.execute(
-                    "SELECT parent_asin, rating, timestamp FROM interactions WHERE user_id = ?",
+                    "SELECT product_id, rating, timestamp FROM interactions WHERE user_id = ?",
                     (user_id,)
                 )
                 results = cursor.fetchall()
@@ -64,13 +66,14 @@ class QueryHelper:
             return []
     
     def get_similar_users(self, product_id, limit=10):
-        """Return users who purchased a specific product."""
+        """Return users who purchased a specific product (dense dataset)."""
         
         try:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
+                # Updated query for dense dataset schema
                 cursor.execute(
-                    "SELECT user_id, rating FROM interactions WHERE parent_asin = ? ORDER BY rating DESC LIMIT ?",
+                    "SELECT user_id, rating FROM interactions WHERE product_id = ? ORDER BY rating DESC LIMIT ?",
                     (product_id, limit)
                 )
                 results = cursor.fetchall()
