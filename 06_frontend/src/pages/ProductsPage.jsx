@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { productsAPI } from '../services/api';
 import { parseErrorMessage, hasValidPrice } from '../utils/helpers';
@@ -6,6 +6,19 @@ import Header from '../components/common/Header';
 import ProductFilters from '../components/products/ProductFilters';
 import ProductGrid from '../components/products/ProductGrid';
 import ErrorMessage from '../components/common/ErrorMessage';
+
+const parseSearchParams = (params) => {
+  const search = params.get('search') || '';
+  const category = params.get('category') || '';
+  const pageValue = parseInt(params.get('page') || '1', 10);
+  const page = Number.isNaN(pageValue) || pageValue < 1 ? 1 : pageValue;
+
+  return {
+    search,
+    category,
+    page
+  };
+};
 
 /**
  * Products catalog page
@@ -20,33 +33,92 @@ const ProductsPage = () => {
   
   // URL search parameters for sharing and bookmarking
   const [searchParams, setSearchParams] = useSearchParams();
-  
-  // Get current filter values from URL (memoized for stability)
-  const currentSearch = useMemo(() => searchParams.get('search') || '', [searchParams]);
-  const currentCategory = useMemo(() => searchParams.get('category') || '', [searchParams]);
-  const currentPage = useMemo(() => parseInt(searchParams.get('page') || '1', 10), [searchParams]);
+  const searchParamsString = searchParams.toString();
+
+  const [filters, setFilters] = useState(() => parseSearchParams(new URLSearchParams(searchParamsString)));
+  const { search: currentSearch, category: currentCategory, page: currentPage } = filters;
   const limit = 20; // Products per page
 
-  // Update URL when filters change
-  const paramsString = useMemo(() => searchParams.toString(), [searchParams]);
+  const requestIdRef = useRef(0);
 
-  const updateURL = useCallback((search, category, page = 1) => {
+  // Sync filters when URL changes (e.g., browser navigation)
+  useEffect(() => {
+    const params = new URLSearchParams(searchParamsString);
+    const nextFilters = parseSearchParams(params);
+
+    setFilters((prev) => {
+      if (
+        prev.search === nextFilters.search &&
+        prev.category === nextFilters.category &&
+        prev.page === nextFilters.page
+      ) {
+        return prev;
+      }
+      return nextFilters;
+    });
+  }, [searchParamsString]);
+
+  // Keep URL updated with current filters
+  useEffect(() => {
     const params = new URLSearchParams();
-    
-    if (search) params.set('search', search);
-    if (category) params.set('category', category);
-    if (page > 1) params.set('page', page.toString());
-    
-    const newSearch = params.toString();
-    if (newSearch === paramsString) {
-      return;
-    }
 
-    setSearchParams(params);
-  }, [paramsString, setSearchParams]);
+    if (currentSearch) params.set('search', currentSearch);
+    if (currentCategory) params.set('category', currentCategory);
+    if (currentPage > 1) params.set('page', currentPage.toString());
+
+    const newSearch = params.toString();
+    if (newSearch !== searchParamsString) {
+      setSearchParams(params, { replace: true });
+    }
+  }, [currentSearch, currentCategory, currentPage, searchParamsString, setSearchParams]);
+
+  const handleSearchChange = useCallback((search) => {
+    setFilters((prev) => {
+      if (prev.search === search) {
+        if (prev.page === 1) {
+          return prev;
+        }
+        return { ...prev, page: 1 };
+      }
+      return {
+        ...prev,
+        search,
+        page: 1
+      };
+    });
+  }, []);
+
+  const handleCategoryChange = useCallback((category) => {
+    setFilters((prev) => {
+      if (prev.category === category) {
+        if (prev.page === 1) {
+          return prev;
+        }
+        return { ...prev, page: 1 };
+      }
+      return {
+        ...prev,
+        category,
+        page: 1
+      };
+    });
+  }, []);
+
+  const handlePageChange = useCallback((page) => {
+    setFilters((prev) => {
+      if (prev.page === page) {
+        return prev;
+      }
+      return {
+        ...prev,
+        page
+      };
+    });
+  }, []);
 
   // Fetch products based on current filters
-  const fetchProducts = async (search = currentSearch, category = currentCategory, page = currentPage) => {
+  const fetchProducts = useCallback(async (search, category, page) => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     setError('');
 
@@ -64,22 +136,28 @@ const ProductsPage = () => {
       // Filter out products without valid prices
       const productsWithPrices = (data.products || []).filter(hasValidPrice);
       
-      setProducts(productsWithPrices);
-      setPagination({
-        currentPage: page,
-        totalPages: Math.ceil(data.total / limit),
-        hasMore: data.has_more,
-        total: data.total,
-        filteredTotal: productsWithPrices.length
-      });
+      if (requestId === requestIdRef.current) {
+        setProducts(productsWithPrices);
+        setPagination({
+          currentPage: page,
+          totalPages: Math.ceil(data.total / limit),
+          hasMore: data.has_more,
+          total: data.total,
+          filteredTotal: productsWithPrices.length
+        });
+      }
     } catch (err) {
-      setError(parseErrorMessage(err));
-      setProducts([]);
-      setPagination({});
+      if (requestId === requestIdRef.current) {
+        setError(parseErrorMessage(err));
+        setProducts([]);
+        setPagination({});
+      }
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
-  };
+  }, [limit]);
 
   // Fetch categories for filter dropdown
   const fetchCategories = async () => {
@@ -98,21 +176,8 @@ const ProductsPage = () => {
 
   // Load products when search params change
   useEffect(() => {
-    fetchProducts();
-  }, [currentSearch, currentCategory, currentPage]);
-
-  // Handle filter changes
-  const handleSearchChange = useCallback((search) => {
-    updateURL(search, currentCategory, 1);
-  }, [updateURL, currentCategory]);
-
-  const handleCategoryChange = useCallback((category) => {
-    updateURL(currentSearch, category, 1);
-  }, [updateURL, currentSearch]);
-
-  const handlePageChange = useCallback((page) => {
-    updateURL(currentSearch, currentCategory, page);
-  }, [updateURL, currentSearch, currentCategory]);
+    fetchProducts(currentSearch, currentCategory, currentPage);
+  }, [currentSearch, currentCategory, currentPage, fetchProducts]);
 
   return (
     <div className="min-h-screen bg-gray-50">
