@@ -209,7 +209,9 @@ class DatabaseService:
         query = """
         SELECT DISTINCT main_category 
         FROM products 
-        WHERE main_category IS NOT NULL AND main_category != ''
+        WHERE main_category IS NOT NULL 
+        AND main_category != '' 
+        AND TRIM(main_category) != ''
         ORDER BY main_category
         """
         
@@ -218,4 +220,6 @@ class DatabaseService:
             cursor.execute(query)
             results = cursor.fetchall()
             
-            return [row[0] for row in results if row[0]]
+            # Additional filtering to ensure clean categories
+            categories = [row[0].strip() for row in results if row[0] and row[0].strip()]
+            return categories
