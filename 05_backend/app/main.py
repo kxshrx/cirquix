@@ -14,9 +14,12 @@ rec_service = None
 async def lifespan(app: FastAPI):
     # Startup
     global rec_service
-    model_dir = "/Users/kxshrx/asylum/cirquix/04_recommendation_model"
+    # Use relative path that works both locally and on Render
+    from pathlib import Path
+    backend_dir = Path(__file__).parent.parent
+    model_dir = str(backend_dir.parent / "04_recommendation_model")
     rec_service = RecommendationService(model_dir)
-    print("Application startup complete")
+    print(f"Application startup complete. Model dir: {model_dir}")
     
     yield
     
@@ -31,13 +34,19 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Configure CORS
+# Configure CORS - Allow both local development and Render deployment
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "https://cirquix-frontend.onrender.com",
+        "*"  # Fallback for other origins during development
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 # Include routers

@@ -263,7 +263,7 @@ This project is licensed under the MIT License.
 
 ## Authors
 
-Developed by Kaushar
+Developed by Kishore
 
 ## Acknowledgments
 

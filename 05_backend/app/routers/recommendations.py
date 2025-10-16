@@ -7,12 +7,17 @@ router = APIRouter(prefix="/recommendations", tags=["recommendations"])
 
 
 def get_db_service():
-    db_path = "/Users/kxshrx/asylum/cirquix/03_database_setup/recommendation.db"
+    from pathlib import Path
+    # Use relative path that works both locally and on Render
+    backend_dir = Path(__file__).parent.parent.parent
+    db_path = str(backend_dir.parent / "03_database_setup" / "recommendation.db")
     return DatabaseService(db_path)
 
 
 def get_recommendation_service():
-    model_dir = "/Users/kxshrx/asylum/cirquix/04_recommendation_model"
+    from pathlib import Path
+    backend_dir = Path(__file__).parent.parent.parent
+    model_dir = str(backend_dir.parent / "04_recommendation_model")
     return RecommendationService(model_dir)
 
 
