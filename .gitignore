@@ -35,8 +35,11 @@ ENV/
 *.log
 logs/
 
-# Model files
+# Model files (allow specific production model files)
 *.pkl
+!04_recommendation_model/als_model_optimized_04.pkl
+!04_recommendation_model/mappings_optimized_04.pkl
+!04_recommendation_model/fallback_data_04.pkl
 *.joblib
 *.model
 
