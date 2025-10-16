@@ -42,3 +42,24 @@ logs/
 
 # Jupyter checkpoints
 .ipynb_checkpoints/
+
+# Test files (temporary/development only)
+test_*.js
+test_*.py
+*_test.csv
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.old
+*~
+
+# Build artifacts
+dist/
+build/
+.cache/
+
+# Node.js (frontend dependencies should be installed via package.json)
+# Uncomment the next line if you want to ignore node_modules
+# node_modules/
