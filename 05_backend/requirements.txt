@@ -1,5 +1,19 @@
-fastapi
-uvicorn[standard]
-pydantic
-python-dotenv
-requests
+# Backend Framework
+fastapi>=0.119.0
+uvicorn[standard]>=0.37.0
+pydantic>=2.12.0
+
+# Environment and Configuration
+python-dotenv>=1.1.0
+
+# HTTP Client
+requests>=2.32.0
+
+# Data Processing (required by services/db.py and services/hybrid_recommender.py)
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Machine Learning (required by services/hybrid_recommender.py)
+scipy>=1.10.0
+scikit-learn>=1.3.0
+implicit>=0.7.0
