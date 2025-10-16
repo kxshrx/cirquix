@@ -1,38 +1,10 @@
 {
-  "model_config": {
-    "factors": 100,
-    "regularization": 0.05,
-    "iterations": 25,
-    "training_time": 26.52490234375,
-    "data_filtering": {
-      "original_users": 1560254,
-      "original_items": 149111,
-      "original_interactions": 6267269,
-      "original_sparsity": 0.9999730615038024,
-      "filtered_users": 105224,
-      "filtered_items": 21226,
-      "filtered_interactions": 1276343,
-      "filtered_sparsity": 0.9994285418460978,
-      "min_user_interactions": 10,
-      "min_item_interactions": 15,
-      "alpha_confidence": 20,
-      "data_retention_pct": 20.365218087814643
-    }
-  },
-  "validation_results": {
-    "hit_rate@5": 0.012,
-    "hit_rate@10": 0.016,
-    "hit_rate@20": 0.034
-  },
-  "coverage_metrics": {
-    "catalog_coverage": 0.08013756713464619,
-    "unique_items_recommended": 1701,
-    "total_items": 21226
-  },
-  "evaluation_summary": {
-    "evaluated_users": 500,
-    "target_hit_rate_10": 0.1,
-    "actual_hit_rate_10": 0.016,
-    "improvement_factor": 1.6
-  }
+  "training_date": "2025-10-16T19:06:34.376870",
+  "n_users": 54552,
+  "n_items": 15419,
+  "n_interactions": 824766,
+  "matrix_density": 0.000980536723037298,
+  "catalog_coverage": 0.022569557040015564,
+  "als_factors": 100,
+  "als_iterations": 15
 }
