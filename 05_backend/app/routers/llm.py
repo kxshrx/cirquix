@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Optional
-from ..services.llm_integration import get_llm_explanation
+from ..services.llm_integration import get_llm_explanation, get_llm_service_status, explain_recommendation_strategy
 
 router = APIRouter(prefix="/llm", tags=["LLM Explanations"])
 
@@ -15,6 +15,11 @@ class ExplanationRequest(BaseModel):
 class ExplanationResponse(BaseModel):
     user_id: str
     explanations: List[Dict]
+
+
+class StrategyExplanationRequest(BaseModel):
+    strategy: str
+    user_history_size: int
 
 
 @router.post("/explain", response_model=ExplanationResponse)
@@ -52,14 +57,38 @@ async def explain_recommendations(request: ExplanationRequest):
         )
 
 
+@router.post("/explain-strategy")
+async def explain_strategy(request: StrategyExplanationRequest):
+    """Explain the recommendation strategy used."""
+    try:
+        explanation = explain_recommendation_strategy(
+            strategy=request.strategy,
+            user_history_size=request.user_history_size
+        )
+        
+        return {
+            "strategy": request.strategy,
+            "explanation": explanation,
+            "user_history_size": request.user_history_size
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error explaining strategy: {str(e)}"
+        )
+
+
 @router.get("/status")
 async def llm_service_status():
     """Check the status of the LLM explanation service."""
-    from ..services.llm_integration import llm_service
-    
-    return {
-        "service": "LLM Explanation Service",
-        "status": "available" if llm_service.is_available() else "unavailable",
-        "api_key_configured": llm_service.api_key is not None,
-        "fallback_mode": not llm_service.is_available()
-    }
+    try:
+        status = get_llm_service_status()
+        return status
+        
+    except Exception as e:
+        return {
+            "service": "LLM Explanation Service",
+            "status": "error",
+            "error": str(e)
+        }

@@ -1,7 +1,148 @@
 """
-LLM Integration Module for Recommendation Explanations
-Handles Groq API calls and generates natural language explanations for product recommendations.
+LLM Integration Service for Recommendation Explanations
+Provides structured explanations for product recommendations.
 """
+
+from typing import List, Dict, Any, Optional
+import json
+
+
+def get_llm_explanation(user_id: str, recommendations: List[Dict], user_history: Optional[List[Dict]] = None) -> List[Dict]:
+    """
+    Generate structured LLM explanations for recommendations.
+    
+    Args:
+        user_id: User identifier
+        recommendations: List of recommended products with metadata
+        user_history: Optional user purchase history for context
+    
+    Returns:
+        List of explanations with product_id and explanation text
+    """
+    
+    explanations = []
+    
+    for i, rec in enumerate(recommendations):
+        product_id = rec.get("product_id", "")
+        title = rec.get("title", "Unknown Product")
+        category = rec.get("category", "Unknown")
+        confidence = rec.get("confidence", 0)
+        rating = rec.get("rating", 0)
+        
+        # Generate contextual explanation based on available data
+        explanation = _generate_contextual_explanation(
+            user_id=user_id,
+            product_title=title,
+            category=category,
+            confidence=confidence,
+            rating=rating,
+            rank=i + 1,
+            user_history=user_history
+        )
+        
+        explanations.append({
+            "product_id": product_id,
+            "explanation": explanation
+        })
+    
+    return explanations
+
+
+def _generate_contextual_explanation(
+    user_id: str,
+    product_title: str,
+    category: str,
+    confidence: float,
+    rating: float,
+    rank: int,
+    user_history: Optional[List[Dict]] = None
+) -> str:
+    """Generate a contextual explanation for a product recommendation."""
+    
+    # Analyze user history for context
+    history_context = ""
+    if user_history and len(user_history) > 0:
+        categories_bought = [item.get("title", "").split()[0] for item in user_history[:3]]
+        if categories_bought:
+            history_context = f"Based on your recent purchases of {', '.join(categories_bought[:2])}, "
+    
+    # Confidence-based explanations
+    if confidence > 0.8:
+        confidence_text = "highly recommended"
+    elif confidence > 0.6:
+        confidence_text = "strongly recommended"
+    elif confidence > 0.4:
+        confidence_text = "recommended"
+    else:
+        confidence_text = "suggested"
+    
+    # Rating-based context
+    rating_text = ""
+    if rating >= 4.5:
+        rating_text = " This top-rated product has excellent customer reviews."
+    elif rating >= 4.0:
+        rating_text = " This well-rated product is popular among customers."
+    elif rating >= 3.5:
+        rating_text = " This product has good customer feedback."
+    
+    # Category-specific explanations
+    category_explanations = {
+        "Electronics": "perfect for tech enthusiasts looking for quality electronics",
+        "Books": "great addition to your reading collection",
+        "Home & Kitchen": "ideal for enhancing your home experience",
+        "Sports & Outdoors": "excellent choice for active lifestyle",
+        "Clothing": "stylish option that matches current trends",
+        "Tools & Home Improvement": "practical tool for your projects"
+    }
+    
+    category_text = category_explanations.get(category, f"quality {category.lower()} product")
+    
+    # Rank-based positioning
+    rank_text = ""
+    if rank == 1:
+        rank_text = "Our top recommendation: "
+    elif rank == 2:
+        rank_text = "Another excellent choice: "
+    elif rank <= 3:
+        rank_text = "Also recommended: "
+    
+    # Combine elements into coherent explanation
+    explanation = f"{rank_text}{history_context}this {product_title} is {confidence_text} as a {category_text}.{rating_text}"
+    
+    # Ensure explanation is properly capitalized
+    explanation = explanation[0].upper() + explanation[1:] if explanation else "Recommended for you."
+    
+    return explanation
+
+
+def get_llm_service_status() -> Dict[str, Any]:
+    """Get the status of the LLM service."""
+    return {
+        "service": "LLM Explanation Service",
+        "status": "active",
+        "type": "rule-based",
+        "features": [
+            "Contextual explanations",
+            "User history integration",
+            "Confidence-based messaging",
+            "Category-specific insights"
+        ],
+        "version": "1.0.0"
+    }
+
+
+def explain_recommendation_strategy(strategy: str, user_history_size: int) -> str:
+    """Explain the recommendation strategy used."""
+    
+    strategy_explanations = {
+        "als_collaborative": f"Using collaborative filtering based on {user_history_size} items in your history and users with similar preferences.",
+        "hybrid_fallback": f"Using popularity and category-based recommendations (user has {user_history_size} items in history).",
+        "popularity": "Showing trending and popular products across all users.",
+        "category_based": "Recommendations based on product categories you've shown interest in.",
+        "fallback": "Showing general popular recommendations."
+    }
+    
+    return strategy_explanations.get(strategy, "Personalized recommendations selected for you.")
 
 import os
 import requests

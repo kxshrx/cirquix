@@ -35,20 +35,18 @@ async def get_user_recommendations(
             detail="Limit must be between 1 and 20"
         )
     
-    # Get user history for LLM context
+    # Get user history for LLM context if user exists
     user_history = None
-    if use_llm and db.user_exists(user_id):
+    if use_llm:
         try:
-            user_history = db.get_user_history(user_id, limit=10)
+            if db.user_exists(user_id):
+                user_history = db.get_user_history(user_id, limit=10)
+            else:
+                # Cold start user - no history available
+                user_history = []
         except Exception as e:
             print(f"Error fetching user history: {e}")
-    
-    # Check if user exists for known users, allow cold start for new users
-    if not db.user_exists(user_id):
-        raise HTTPException(
-            status_code=404,
-            detail=f"User not found: {user_id}"
-        )
+            user_history = []
     
     try:
         recommendations = rec_service.get_recommendations(

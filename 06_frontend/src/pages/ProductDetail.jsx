@@ -66,8 +66,7 @@ const ProductDetail = ({ currentUser }) => {
     try {
       const recommendationsData = await apiService.getRecommendations(currentUser.user_id, {
         limit: 6,
-        useLLM: true,
-        productId: productId
+        useLLM: true
       });
       setRecommendations(recommendationsData.recommendations || []);
     } catch (error) {

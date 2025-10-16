@@ -22,15 +22,15 @@ class RecommendationService:
     
     def _load_models(self):
         try:
-            # Copy the hybrid recommender file to services directory
-            recommender_path = os.path.join(self.model_dir, "2_hybrid_recommender.py")
-            if not os.path.exists(recommender_path):
-                raise FileNotFoundError(f"Hybrid recommender not found: {recommender_path}")
-            
             # Import and initialize the recommendation system
             if HybridRecommendationSystem:
                 self.recommender = HybridRecommendationSystem(self.model_dir)
-                print("Recommendation models loaded successfully")
+                if self.recommender.load_models():
+                    self.recommender.load_product_metadata()
+                    print("Recommendation models loaded successfully")
+                else:
+                    print("Failed to load recommendation models")
+                    self.recommender = None
             else:
                 print("Warning: HybridRecommendationSystem not available")
         
@@ -44,24 +44,25 @@ class RecommendationService:
         
         try:
             # Get recommendations from hybrid system
-            recommendations = self.recommender.get_recommendations(
+            result = self.recommender.get_recommendations(
                 user_id=user_id,
                 top_k=num_recommendations,
                 include_metadata=True
             )
             
-            # Format response
+            # Format response to match expected API schema
             formatted_recs = []
-            for rec in recommendations:
-                formatted_recs.append({
+            for rec in result.get('recommendations', []):
+                formatted_rec = {
                     "product_id": rec["product_id"],
                     "title": rec.get("title", "Product Title"),
                     "category": rec.get("category", "Electronics"),
                     "price": rec.get("price", None),
                     "rating": rec.get("rating", None),
                     "confidence": rec["confidence"],
-                    "explanation": self._generate_explanation(rec)
-                })
+                    "explanation": rec.get("explanation", "Recommended for you")
+                }
+                formatted_recs.append(formatted_rec)
             
             # Generate LLM explanations if enabled and available
             if use_llm and get_llm_explanation and formatted_recs:
@@ -76,7 +77,7 @@ class RecommendationService:
             
             return {
                 "user_id": user_id,
-                "strategy": recommendations[0].get("strategy", "hybrid") if recommendations else "fallback",
+                "strategy": result.get("strategy", "hybrid"),
                 "recommendations": formatted_recs
             }
         
