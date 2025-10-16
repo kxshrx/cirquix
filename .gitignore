@@ -7,10 +7,10 @@ raw/
 *.db
 !03_database_setup/recommendation.db
 
-# Environment files (but allow .example files)
+# Environment files (but allow .example files and frontend production config)
 .env
 .env.local
-.env.production
+!06_frontend/.env.production
 
 # System files
 .DS_Store
