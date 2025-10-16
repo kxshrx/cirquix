@@ -59,6 +59,7 @@ class RecommendationService:
                     "category": rec.get("category", "Electronics"),
                     "price": rec.get("price", None),
                     "rating": rec.get("rating", None),
+                    "image_url": rec.get("image_url", None),
                     "confidence": rec["confidence"],
                     "explanation": rec.get("explanation", "Recommended for you")
                 }
@@ -94,6 +95,7 @@ class RecommendationService:
                 "category": "Amazon Devices",
                 "price": "49.99",
                 "rating": 4.5,
+                "image_url": None,
                 "confidence": 0.5,
                 "explanation": "Popular product recommendation"
             },
@@ -103,6 +105,7 @@ class RecommendationService:
                 "category": "Amazon Devices", 
                 "price": "39.99",
                 "rating": 4.5,
+                "image_url": None,
                 "confidence": 0.4,
                 "explanation": "Trending electronics product"
             }

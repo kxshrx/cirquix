@@ -31,6 +31,7 @@ class Recommendation(BaseModel):
     category: str
     price: Optional[str] = None
     rating: Optional[float] = None
+    image_url: Optional[str] = None
     confidence: float
     explanation: str
 

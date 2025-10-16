@@ -22,14 +22,15 @@ const RecommendationCard = ({ recommendation }) => {
     >
       <div className="flex flex-col sm:flex-row">
         {/* Product image */}
-        <div className="sm:w-32 sm:h-32 w-full h-48 flex-shrink-0">
+        <div className="sm:w-40 sm:h-40 w-full h-52 flex-shrink-0 bg-gray-100">
           <img
-            src={recommendation.image_url || getPlaceholderImage(200, 200, recommendation.title)}
+            src={recommendation.image_url || getPlaceholderImage(300, 300, recommendation.title)}
             alt={recommendation.title}
-            className="w-full h-full object-cover object-center"
+            className="w-full h-full object-contain object-center p-2"
             onError={(e) => {
-              e.target.src = getPlaceholderImage(200, 200, recommendation.title);
+              e.target.src = getPlaceholderImage(300, 300, recommendation.title);
             }}
+            loading="lazy"
           />
         </div>
 
