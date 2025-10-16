@@ -107,7 +107,7 @@ class HybridRecommendationSystem:
         """Load product metadata from database."""
         try:
             conn = sqlite3.connect(self.db_path)
-            query = "SELECT product_id, title, main_category, average_rating, price FROM products"
+            query = "SELECT product_id, title, main_category, average_rating, price, image_url FROM products"
             self.product_metadata = pd.read_sql_query(query, conn).set_index('product_id')
             conn.close()
             print(f"Product metadata loaded: {len(self.product_metadata)} products")
@@ -265,7 +265,8 @@ class HybridRecommendationSystem:
                         'title': str(prod_data.get('title', 'Unknown')),
                         'category': str(prod_data.get('main_category', 'Unknown')),
                         'rating': float(prod_data.get('average_rating', 0.0)),
-                        'price': str(prod_data.get('price', 'N/A'))
+                        'price': str(prod_data.get('price', 'N/A')),
+                        'image_url': str(prod_data.get('image_url', '')) if pd.notna(prod_data.get('image_url')) else None
                     }
                 
                 enriched_recs.append({
@@ -274,6 +275,7 @@ class HybridRecommendationSystem:
                     'category': metadata.get('category', 'Unknown'),
                     'price': metadata.get('price', 'N/A'),
                     'rating': metadata.get('rating', 0.0),
+                    'image_url': metadata.get('image_url'),
                     'confidence': confidence,
                     'explanation': self._generate_explanation(strategy_used, metadata.get('category', 'product'))
                 })

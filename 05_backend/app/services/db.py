@@ -17,9 +17,9 @@ class DatabaseService:
         return sqlite3.connect(self.db_path)
     
     def get_product(self, product_id: str) -> Optional[Dict[str, Any]]:
-        # Updated query for dense dataset schema
+        # Updated query for dense dataset schema with image URL
         query = """
-        SELECT product_id, title, main_category, price, average_rating 
+        SELECT product_id, title, main_category, price, average_rating, image_url
         FROM products 
         WHERE product_id = ?
         """
@@ -35,7 +35,7 @@ class DatabaseService:
                     "category": result[2],
                     "price": result[3],
                     "rating": result[4],
-                    "image_url": None
+                    "image_url": result[5]
                 }
             return None
     
@@ -84,7 +84,7 @@ class DatabaseService:
             ]
     
     def get_related_products(self, product_id: str, limit: int = 5) -> List[Dict[str, Any]]:
-        # Updated query for dense dataset schema
+        # Updated query for dense dataset schema with image URL
         query = """
         WITH product_users AS (
             SELECT user_id FROM interactions WHERE product_id = ?
@@ -98,7 +98,7 @@ class DatabaseService:
             ORDER BY co_occurrence DESC
             LIMIT ?
         )
-        SELECT rp.product_id, p.title, p.main_category, p.price, p.average_rating
+        SELECT rp.product_id, p.title, p.main_category, p.price, p.average_rating, p.image_url
         FROM related_products rp
         JOIN products p ON rp.product_id = p.product_id
         """
@@ -114,7 +114,7 @@ class DatabaseService:
                     "category": row[2],
                     "price": row[3],
                     "rating": row[4],
-                    "image_url": None
+                    "image_url": row[5]
                 }
                 for row in results
             ]
@@ -138,9 +138,9 @@ class DatabaseService:
                            search: Optional[str] = None, category: Optional[str] = None) -> List[Dict[str, Any]]:
         """Get products catalog with pagination, search, and filtering (dense dataset)"""
         
-        # Updated query for dense dataset schema
+        # Updated query for dense dataset schema with image URL
         base_query = """
-        SELECT product_id, title, main_category, price, average_rating, rating_number
+        SELECT product_id, title, main_category, price, average_rating, rating_number, image_url
         FROM products
         WHERE 1=1
         """
@@ -175,7 +175,7 @@ class DatabaseService:
                     "price": row[3],
                     "rating": row[4],
                     "rating_count": row[5],
-                    "image_url": None,
+                    "image_url": row[6],
                     "description": f"Quality {row[2]} product with {row[5] or 0} customer reviews"
                 }
                 for row in results
